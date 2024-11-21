@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Notas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 15px;
+            text-align: center;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .output {
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        button {
+            padding: 15px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #loginSection, #gradeCalculatorSection {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Calculadora de Notas</h1>
+    <div id="loginSection">
+        <h2>Login</h2>
+        <div class="input-group">
+            <label for="username">Nome de Usuário:</label>
+            <input type="text" id="username" required>
+        </div>
+        <div class="input-group">
+            <label for="password">Senha:</label>
+            <input type="password" id="password" required>
+        </div>
+        <button type="button" onclick="login()">Entrar</button>
+        <button type="button" onclick="register()">Registrar</button>
+    </div>
+
+    <div id="gradeCalculatorSection">
+        <button type="button" onclick="logout()">Sair</button>
+        <form id="gradeCalculator">
+            <div class="input-group">
+                <label for="subject_name">Nome da Matéria:</label>
+                <input type="text" id="subject_name" required>
+            </div>
+            <h2>Primeiro Bimestre</h2>
+            <div class="input-group">
+                <label for="n1_bim1">Nota N1 (1º Bimestre):</label>
+                <input type="number" id="n1_bim1" step="0.1" min="0" max="10" required>
+            </div>
+            <div class="input-group">
+                <label for="n2_bim1">Nota N2 (1º Bimestre):</label>
+                <input type="number" id="n2_bim1" step="0.1" min="0" max="10" required>
+            </div>
+
+            <h2>Segundo Bimestre</h2>
+            <div class="input-group">
+                <label for="n1_bruto">Nota N1 Bruta (2º Bimestre):</label>
+                <input type="number" id="n1_bruto" step="0.1" min="0" max="10" required>
+            </div>
+            <div class="input-group">
+                <label for="aform">Avaliação Formativa (2º Bimestre):</label>
+                <input type="number" id="aform" step="0.1" min="0" max="10" required>
+            </div>
+            <div class="input-group">
+                <label for="n2_bim2">Nota N2 (2º Bimestre):</label>
+                <input type="number" id="n2_bim2" step="0.1" min="0" max="10" required>
+            </div>
+            <button type="button" onclick="calculateGrades()">Calcular e Adicionar</button>
+        </form>
+        <div class="output">
+            <table id="gradesTable">
+                <thead>
+                    <tr>
+                        <th>Matéria</th>
+                        <th>N1 (1º Bim)</th>
+                        <th>N2 (1º Bim)</th>
+                        <th>M1 (1º Bim)</th>
+                        <th>N1 (2º Bim)</th>
+                        <th>N2 (2º Bim)</th>
+                        <th>M2 (2º Bim)</th>
+                        <th>MF</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="gradesBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", checkLogin);
+
+        function checkLogin() {
+            const loggedInUser = localStorage.getItem("loggedInUser");
+            if (loggedInUser) {
+                document.getElementById("loginSection").style.display = "none";
+                document.getElementById("gradeCalculatorSection").style.display = "block";
+                loadSavedData(loggedInUser);
+            } else {
+                document.getElementById("loginSection").style.display = "block";
+            }
+        }
+
+        function login() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            let users = JSON.parse(localStorage.getItem("users")) || {};
+
+            if (users[username] && users[username].password === password) {
+                localStorage.setItem("loggedInUser", username);
+                document.getElementById("loginSection").style.display = "none";
+                document.getElementById("gradeCalculatorSection").style.display = "block";
+                loadSavedData(username);
+            } else {
+                alert("Usuário ou senha incorretos!");
+            }
+        }
+
+        function register() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            let users = JSON.parse(localStorage.getItem("users")) || {};
+
+            if (!users[username]) {
+                users[username] = { password: password, gradesData: [] };
+                localStorage.setItem("users", JSON.stringify(users));
+                alert("Registro bem-sucedido! Agora você pode fazer login.");
+            } else {
+                alert("Usuário já existe!");
+            }
+        }
+
+        function calculateGrades() {
+            const loggedInUser = localStorage.getItem("loggedInUser");
+            let users = JSON.parse(localStorage.getItem("users"));
+            let existingSubjects = users[loggedInUser].gradesData.map(item => item.subjectName.toLowerCase());
+            const subjectNameInput = document.getElementById("subject_name").value.trim();
+            const subjectName = subjectNameInput.toLowerCase();
+
+            if (existingSubjects.includes(subjectName)) {
+                alert("Matéria já cadastrada!");
+                return;
+            }
+
+            // Coletar dados do formulário
+            const n1_bim1 = parseFloat(document.getElementById("n1_bim1").value) || 0;
+            const n2_bim1 = parseFloat(document.getElementById("n2_bim1").value) || 0;
+            const n1_bruto = parseFloat(document.getElementById("n1_bruto").value) || 0;
+            const aform = parseFloat(document.getElementById("aform").value) || 0;
+            const n2_bim2 = parseFloat(document.getElementById("n2_bim2").value) || 0;
+
+            // Cálculo do Primeiro Bimestre
+            const m1_bim1 = (n1_bim1 * 0.4) + (n2_bim1 * 0.6);
+
+            // Ajuste de N1 com Avaliação Formativa para o Segundo Bimestre
+            const n1_adjusted = (aform * 0.5) + (n1_bruto * 0.5);
+
+            // Cálculo do Segundo Bimestre
+            const m2_bim2 = (n1_adjusted * 0.4) + (n2_bim2 * 0.6);
+
+            // Média Final
+            const media_final = (m1_bim1 + m2_bim2) / 2;
+
+            let status = media_final >= 5 ? "✔" : "❌";
+
+            // Adicionar os resultados na tabela
+            const gradesBody = document.getElementById("gradesBody");
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${subjectNameInput}</td>
+                <td>${n1_bim1.toFixed(1)}</td>
+                <td>${n2_bim1.toFixed(1)}</td>
+                <td>${m1_bim1.toFixed(1)}</td>
+                <td>${n1_bruto.toFixed(1)}</td>
+                <td>${n2_bim2.toFixed(1)}</td>
+                <td>${m2_bim2.toFixed(1)}</td>
+                <td>${media_final.toFixed(1)}</td>
+                <td>${status}</td>
+                <td><button onclick="editGrade(${gradesBody.rows.length})">Editar</button></td>
+            `;
+            gradesBody.appendChild(row);
+
+            document.getElementById("gradeCalculator").reset();
+            saveData(subjectNameInput, n1_bim1, n2_bim1, m1_bim1, n1_bruto, n2_bim2, m2_bim2, media_final, status);
+        }
+
+        function saveData(subjectName, n1_bim1, n2_bim1, m1_bim1, n1_bruto, n2_bim2, m2_bim2, media_final, status) {
+            const loggedInUser = localStorage.getItem("loggedInUser");
+            if (loggedInUser) {
+                let users = JSON.parse(localStorage.getItem("users"));
+                users[loggedInUser].gradesData.push({ subjectName, n1_bim1, n2_bim1, m1_bim1, n1_bruto, n2_bim2, m2_bim2, media_final, status });
+                localStorage.setItem("users", JSON.stringify(users));
+            }
+        }
+
+        function loadSavedData(username) {
+            let users = JSON.parse(localStorage.getItem("users"));
+            if (users && users[username]) {
+                const gradesBody = document.getElementById("gradesBody");
+                gradesBody.innerHTML = "";
+                users[username].gradesData.forEach((item, index) => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${item.subjectName}</td>
+                        <td>${item.n1_bim1.toFixed(1)}</td>
+                        <td>${item.n2_bim1.toFixed(1)}</td>
+                        <td>${item.m1_bim1.toFixed(1)}</td>
+                        <td>${item.n1_bruto.toFixed(1)}</td>
+                        <td>${item.n2_bim2.toFixed(1)}</td>
+                        <td>${item.m2_bim2.toFixed(1)}</td>
+                        <td>${item.media_final.toFixed(1)}</td>
+                        <td>${item.status}</td>
+                        <td><button onclick="editGrade(${index})">Editar</button></td>
+                    `;
+                    gradesBody.appendChild(row);
+                });
+            }
+        }
+
+        function editGrade(index) {
+            const loggedInUser = localStorage.getItem("loggedInUser");
+            if (loggedInUser) {
+                let users = JSON.parse(localStorage.getItem("users"));
+                if (users && users[loggedInUser]) {
+                    const item = users[loggedInUser].gradesData[index];
+                    document.getElementById("subject_name").value = item.subjectName;
+                    document.getElementById("n1_bim1").value = item.n1_bim1;
+                    document.getElementById("n2_bim1").value = item.n2_bim1;
+                    document.getElementById("n1_bruto").value = item.n1_bruto;
+                    document.getElementById("aform").value = item.aform;
+                    document.getElementById("n2_bim2").value = item.n2_bim2;
+
+                    // Remover o item para ser atualizado
+                    users[loggedInUser].gradesData.splice(index, 1);
+                    localStorage.setItem("users", JSON.stringify(users));
+                    loadSavedData(loggedInUser);
+                }
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("loggedInUser");
+            document.getElementById("gradeCalculatorSection").style.display = "none";
+            document.getElementById("loginSection").style.display = "block";
+        }
+    </script>
+</body>
+</html>
